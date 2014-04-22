@@ -1,8 +1,8 @@
-graylog Cookbook
+graylog2-cookbook
 ================
 This cookbook installs standalone graylog server with its web user interface. Upstart jobs for both are created. 
 This cookbook does minimum installation to build graylog2 system. For next release, all features to edit 
-graylog2.conf will be added. Same situation applies for elastic search.
+`graylog2.conf` will be added. Same situation applies for elastic search.
 
 
 Requirements
@@ -12,7 +12,7 @@ Requirements
 - Mongodb instance should run on localhost and it shouldn't require authentication.
 - Elasticsearch cluster name should be set, to redirect graylog2-server to specific one. This is important if you are running multiple clusters on same network. 
   Make sure that elasticsearch version matches with the required one for specific graylog2-version. It is indicated on graylog2-installation side.
-:
+
 #### packages
 - `java`
 - `mongod`
@@ -20,10 +20,7 @@ Requirements
 
 Attributes
 ----------
-TODO: List your cookbook attributes here.
 
-e.g.
-#### os-patch::default
 <table>
   <tr>
     <th>Key</th>
@@ -116,5 +113,6 @@ Contributing
 
 License and Authors
 -------------------
-Authors: Sefa Sahin Koc
+Authors: Sefa Şahin Koç
+
 License: Apache
