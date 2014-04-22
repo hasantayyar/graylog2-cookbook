@@ -1,0 +1,97 @@
+#!/bin/bash
+
+CMD=$1
+NOHUP=`which nohup`
+
+# resolve links - $0 may be a softlink
+GRAYLOG2CTL="$0"
+GRAYLOG2_HOME=<%="#{node['graylog2']['install_dir']}/#{node['graylog2']['server_pack_name']}"%>
+
+while [ -h "$GRAYLOG2CTL" ]; do
+  ls=`ls -ld "$GRAYLOG2CTL"`
+  link=`expr "$ls" : '.*-> \(.*\)$'`
+  if expr "$link" : '/.*' > /dev/null; then
+    GRAYLOG2CTL="$link"
+  else
+    GRAYLOG2CTL=`dirname "$GRAYLOG2CTL"`/"$link"
+  fi
+done
+
+GRAYLOG2CTL_DIR=`dirname "$GRAYLOG2CTL"`
+GRAYLOG2_SERVER_JAR=$GRAYLOG2_HOME/graylog2-server.jar
+GRAYLOG2_CONF=/etc/graylog2.conf
+GRAYLOG2_PID=$GRAYLOG2_HOME/graylog2.pid
+LOG_FILE=$GRAYLOG2_HOME/log/graylog2-server.log
+
+start() {
+    num=$(is_running)
+    if [ "$num" != "0" ]; then
+        echo "Starting graylog2-server ..."
+        cd "$GRAYLOG2CTL_DIR/.."
+        $NOHUP java -jar ${GRAYLOG2_SERVER_JAR} -f ${GRAYLOG2_CONF} -p ${GRAYLOG2_PID} >> ${LOG_FILE} 2>/dev/null &
+    else
+	echo "graylog2-server is already running"
+    fi
+}
+
+stop() {
+    PID=`cat ${GRAYLOG2_PID}`
+    echo "Stopping graylog2-server ($PID) ..."
+    if kill $PID; then
+        rm ${GRAYLOG2_PID}
+    fi
+}
+
+restart() {
+    stop
+    start
+}
+
+status() {
+    run=$(is_running)
+    if [ "$run" = "0" ]; then 
+		echo "graylog2-server is running"
+        return 0
+    elif [ "$run" = "-1" ]; then
+        rm ${GRAYLOG2_PID}
+    fi
+    echo "graylog2-server not running"
+}
+
+is_running(){
+    pid=$(get_pid)
+    if [ ! -z $pid ]; then
+        if pid_running $pid; then
+            echo "0"
+        else
+            echo "-1"
+        fi
+	    return
+    fi
+    echo "-2"
+}
+get_pid() {
+    cat ${GRAYLOG2_PID} 2> /dev/null
+}
+
+pid_running() {
+    kill -0 $1 2> /dev/null
+}
+
+case "$CMD" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart)
+        restart
+        ;;
+    status)
+        status
+        ;;
+    *)
+        echo "Usage $0 {start|stop|restart|status}"
+        RETVAL=1
+esac

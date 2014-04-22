@@ -1,0 +1,87 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          glassfishstart
+# Required-Start:    $network $local_fs
+# Required-Stop:
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: glassfish init script for Linux
+# Description:       Simplest possible case -- no password file, one default domain
+#                    it would be simple to add such options
+### END INIT INFO
+
+CMD=$1
+NOHUP=`which nohup`
+
+
+WEBUI_HOME=<%="#{node['graylog2']['install_dir']}/#{node['graylog2']['webui_pack_name']}" %>
+PID_FILE="$WEBUI_HOME/RUNNING_PID"
+PROGRAM="graylog2-web-interface"
+LOG_FILE="$WEBUI_HOME/webui.log"
+
+stop(){
+        num=$(is_running)
+        if [ "$num" -lt 2 ]; then
+            echo "$PROGRAM is not running!"
+            exit 3                      #status id to show that program is not running
+        fi
+        echo "Stopping $PROGRAM..."
+        pid=$(cat $PID_FILE)
+        kill -15 $pid
+        rm -f $PID_FILE
+}
+
+is_running(){
+    if [ -f $PID_FILE ]; 
+    then
+        pid=$(cat $PID_FILE)
+        num=$(ps -ef | grep $pid | wc -l)
+        echo $num                       #1: PID_FILE exists but process not. 2: both PID_FILE and process exist
+    else
+        echo -1                         #to point out that there is no such file
+    fi
+}
+
+start(){
+    num=$(is_running)
+    if [ "$num" -eq 2 ]; then
+        echo "$PROGRAM is already running"
+        exit 2                          #status id to show that program is already running
+	elif [ "$num" -eq -1 ]; then
+		rm -f $PID_FILE
+    fi
+	echo "Starting $PROGRAM..."
+    $NOHUP $WEBUI_HOME/bin/graylog2-web-interface 2>$LOG_FILE 1>$LOG_FILE &
+
+}
+
+status(){
+    num=$(is_running)
+    if [ "$num" -eq 2 ]; then
+        echo "$PROGRAM is running."
+    else
+        echo "$PROGRAM is not running."
+    fi
+}
+
+
+case "$1" in
+start)
+    start
+    ;;
+stop)
+    stop
+    ;;
+restart)
+    start
+    stop
+	;;
+status)
+    status 
+    ;;
+*)
+    echo "usage: $0 (start|stop|restart|status)"
+    exit 1                          #status id for run without any parameter
+    ;;
+esac
+exit 0
